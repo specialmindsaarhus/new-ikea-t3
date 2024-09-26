@@ -20,12 +20,21 @@ export const guideRouter = createTRPCRouter({
       // TODO: Replace with actual user ID once authentication is implemented
       const createdBy = "placeholder-user-id";
 
-      return ctx.db.guide.create({
-        data: {
-          title: input.title,
-          description: input.description,
-          createdBy,
-        },
-      });
+      console.log("Attempting to create guide:", input);
+
+      try {
+        const result = await ctx.db.guide.create({
+          data: {
+            title: input.title,
+            description: input.description,
+            createdBy,
+          },
+        });
+        console.log("Guide created successfully:", result);
+        return result;
+      } catch (error) {
+        console.error("Error creating guide:", error);
+        throw error;
+      }
     }),
 });

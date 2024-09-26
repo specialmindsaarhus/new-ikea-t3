@@ -17,6 +17,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -26,6 +27,8 @@ const formSchema = z.object({
 });
 
 export function CreateGuideForm() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,17 +40,23 @@ export function CreateGuideForm() {
   const createGuide = api.guide.create.useMutation({
     onSuccess: () => {
       form.reset();
-      // TODO: Add success message or redirect
+      router.push("/my-guides"); // Redirect to My Guides page after successful creation
+    },
+    onError: (error) => {
+      console.error("Error creating guide:", error);
+      setError("An error occurred while creating the guide. Please try again.");
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    setError(null);
     createGuide.mutate(values);
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {error && <div className="text-red-500">{error}</div>}
         <FormField
           control={form.control}
           name="title"
@@ -84,8 +93,8 @@ export function CreateGuideForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={createGuide.isLoading}>
-          {createGuide.isLoading ? "Creating..." : "Create Guide"}
+        <Button type="submit" disabled={createGuide.isPending}>
+          {createGuide.isPending ? "Creating..." : "Create Guide"}
         </Button>
       </form>
     </Form>

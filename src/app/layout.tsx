@@ -1,4 +1,4 @@
-import "~/styles/globals.css";
+/*import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
@@ -18,6 +18,59 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
         <TRPCReactProvider>{children}</TRPCReactProvider>
+      </body>
+    </html>
+  );
+}
+
+*/
+
+import "~/styles/globals.css";
+import { Inter } from "next/font/google";
+import Link from "next/link";
+import { Button } from "~/components/ui/button";
+import { TRPCProvider } from "./providers";
+//added by Mark from original layout.tsx code
+import { TRPCReactProvider } from "~/trpc/react";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+export const metadata = {
+  title: "Visual Guidance App",
+  description:
+    "Create step-by-step visual guides for individuals with ADHD and autism",
+  icons: [{ rel: "icon", url: "/favicon.ico" }],
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`font-sans ${inter.variable}`}>
+        <TRPCReactProvider>
+          <nav className="bg-gray-800 p-4 text-white">
+            <div className="container mx-auto flex items-center justify-between">
+              <Link href="/" className="text-xl font-bold">
+                Visual Guidance App
+              </Link>
+              <div className="space-x-4">
+                <Button variant="ghost" asChild>
+                  <Link href="/create-guide">Create Guide</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/my-guides">My Guides</Link>
+                </Button>
+              </div>
+            </div>
+          </nav>
+          {children}
+        </TRPCReactProvider>
       </body>
     </html>
   );
