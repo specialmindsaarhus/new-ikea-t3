@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "~/components/ui/button";
 import { api, HydrateClient } from "~/trpc/server";
 
 export default async function Home() {
@@ -14,22 +15,22 @@ export default async function Home() {
           </h1>
           <p className="text-2xl">{hello.greeting}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="/create-guide"
-            >
-              <h3 className="text-2xl font-bold">Create Guide →</h3>
-              <div className="text-lg">Creating a new visual guide.</div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="/my-guides"
-            >
-              <h3 className="text-2xl font-bold">My Guides →</h3>
-              <div className="text-lg">
-                View and manage your created guides.
-              </div>
-            </Link>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/create-guide">
+                <h3 className="text-2xl font-bold">Create Guide →</h3>
+                <div className="text-lg">
+                  Start creating a new visual guide with AI-generated images.
+                </div>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/my-guides">
+                <h3 className="text-2xl font-bold">My Guides →</h3>
+                <div className="text-lg">
+                  View and manage your created guides.
+                </div>
+              </Link>
+            </Button>
           </div>
         </div>
       </main>
