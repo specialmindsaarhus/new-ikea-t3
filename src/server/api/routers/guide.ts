@@ -11,7 +11,10 @@ export const guideRouter = createTRPCRouter({
     }),
 
   getAll: publicProcedure.query(({ ctx }) => {
-    return ctx.db.guide.findMany();
+    return ctx.db.guide.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50, // Limit to 50 guides, adjust as needed
+    });
   }),
 
   create: publicProcedure

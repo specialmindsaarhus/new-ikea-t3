@@ -13,26 +13,35 @@ const MyGuidesClient: FC = () => {
   return (
     <div>
       {guides && guides.length > 0 ? (
-        <ul className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {guides.map((guide) => (
-            <li key={guide.id} className="rounded-lg bg-white p-4 shadow">
+            <div
+              key={guide.id}
+              className="overflow-hidden rounded-lg bg-white shadow-md"
+            >
               <Link
                 href={`/guides/${guide.id}`}
-                className="text-xl font-semibold text-blue-600 hover:underline"
+                className="block p-4 transition duration-150 ease-in-out hover:bg-gray-50"
               >
-                {guide.title}
+                <h2 className="mb-2 truncate text-xl font-semibold text-blue-600">
+                  {guide.title}
+                </h2>
+                {guide.description && (
+                  <p className="mb-2 line-clamp-2 text-sm text-gray-600">
+                    {guide.description}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Created: {new Date(guide.createdAt).toLocaleDateString()}
+                </p>
               </Link>
-              {guide.description && (
-                <p className="mt-2 text-gray-600">{guide.description}</p>
-              )}
-              <p className="mt-2 text-sm text-gray-500">
-                Created at: {new Date(guide.createdAt).toLocaleDateString()}
-              </p>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <p>No guides found. Create your first guide!</p>
+        <p className="text-center text-gray-500">
+          No guides found. Create your first guide!
+        </p>
       )}
     </div>
   );
