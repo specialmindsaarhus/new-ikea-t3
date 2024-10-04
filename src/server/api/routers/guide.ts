@@ -44,12 +44,10 @@ export const guideRouter = createTRPCRouter({
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const guide = await ctx.db.guide.findUnique({
+      const guide = await ctx.db.guide.findFirstOrThrow({
         where: { id: input.id },
+        include: { steps: true }, // Include steps if you need them
       });
-      if (!guide) {
-        throw new Error("Guide not found");
-      }
       return guide;
     }),
 
@@ -79,5 +77,115 @@ export const guideRouter = createTRPCRouter({
         where: { id: input.id },
       });
       return deletedGuide;
+    }),
+
+  // Get steps for a guide
+  getSteps: publicProcedure
+    .input(z.object({ guideId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.step.findMany({
+        where: { guideId: input.guideId },
+        orderBy: { orderNumber: "asc" },
+      });
+    }),
+  addStep: publicProcedure
+    .input(
+      z.object({
+        guideId: z.string(),
+        description: z.string(),
+        imageUrl: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const lastStep = await ctx.db.step.findFirst({
+        where: { guideId: input.guideId },
+        orderBy: { orderNumber: "desc" },
+      });
+
+      const newOrderNumber = lastStep ? lastStep.orderNumber + 1 : 1;
+
+      const data: any = {
+        guideId: input.guideId,
+        description: input.description,
+        orderNumber: newOrderNumber,
+      };
+
+      if (input.imageUrl !== undefined) {
+        data.imageUrl = input.imageUrl;
+      }
+
+      return ctx.db.step.create({ data });
+    }),
+
+  updateStep: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        imageUrl: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const data: any = {
+        description: input.description,
+      };
+
+      if (input.imageUrl !== undefined) {
+        data.imageUrl = input.imageUrl;
+      }
+
+      return ctx.db.step.update({
+        where: { id: input.id },
+        data,
+      });
+    }),
+  // Delete a step
+  deleteStep: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const stepToDelete = await ctx.db.step.findUnique({
+        where: { id: input.id },
+        select: { guideId: true, orderNumber: true },
+      });
+
+      if (!stepToDelete) {
+        throw new Error("Step not found");
+      }
+
+      await ctx.db.step.delete({ where: { id: input.id } });
+
+      // Reorder remaining steps
+      await ctx.db.step.updateMany({
+        where: {
+          guideId: stepToDelete.guideId,
+          orderNumber: { gt: stepToDelete.orderNumber },
+        },
+        data: {
+          orderNumber: { decrement: 1 },
+        },
+      });
+
+      return { success: true };
+    }),
+
+  // Reorder steps
+  reorderSteps: publicProcedure
+    .input(
+      z.object({
+        guideId: z.string(),
+        stepIds: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updates = input.stepIds.map((id, index) =>
+        ctx.db.step.update({
+          where: { id },
+          data: { orderNumber: index + 1 },
+        }),
+      );
+
+      await ctx.db.$transaction(updates);
+
+      return { success: true };
     }),
 });

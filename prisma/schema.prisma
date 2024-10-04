@@ -11,6 +11,19 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Step {
+  id          String   @id @default(cuid())
+  orderNumber Int
+  description String
+  imageUrl    String?  // Make sure this is nullable (optional)
+  guideId     String
+  guide       Guide    @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([guideId, orderNumber])
+}
+
 model Guide {
   id          String   @id @default(cuid())
   title       String
@@ -19,15 +32,6 @@ model Guide {
   steps       Step[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-model Step {
-  id          String @id @default(cuid())
-  orderNumber Int
-  description String
-  imageUrl    String
-  guide       Guide  @relation(fields: [guideId], references: [id])
-  guideId     String
 }
 
 // Note: User model is managed by Supabase Auth

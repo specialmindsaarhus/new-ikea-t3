@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import Link from "next/link";
 import EditGuideForm from "~/components/EditGuideForm";
+import StepsManager from "~/components/StepsManager";
 
 export default function GuidePage() {
   const params = useParams();
@@ -24,7 +25,6 @@ export default function GuidePage() {
 
   const deleteGuide = api.guide.delete.useMutation({
     onSuccess: () => {
-      // Invalidate the cache for the list of guides
       utils.guide.getAll.invalidate();
       router.push("/my-guides");
     },
@@ -88,9 +88,10 @@ export default function GuidePage() {
           {guide.description && (
             <p className="mb-6 text-gray-600">{guide.description}</p>
           )}
-          <p className="text-sm text-gray-500">
+          <p className="mb-6 text-sm text-gray-500">
             Created at: {new Date(guide.createdAt).toLocaleDateString()}
           </p>
+          <StepsManager guideId={guide.id} />
         </>
       )}
     </div>
