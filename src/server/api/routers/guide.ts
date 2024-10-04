@@ -40,4 +40,16 @@ export const guideRouter = createTRPCRouter({
         throw error;
       }
     }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const guide = await ctx.db.guide.findUnique({
+        where: { id: input.id },
+      });
+      if (!guide) {
+        throw new Error("Guide not found");
+      }
+      return guide;
+    }),
 });
