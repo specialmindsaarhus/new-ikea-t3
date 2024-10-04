@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { api, TRPCClientError } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { httpBatchLink } from "@trpc/client";
+import superjson from "superjson";
 
-export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({}));
+export function TRPCReactProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     api.createClient({
       links: [
@@ -14,6 +15,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           url: "/api/trpc",
         }),
       ],
+      transformer: superjson,
     }),
   );
 
