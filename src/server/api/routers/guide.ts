@@ -52,4 +52,23 @@ export const guideRouter = createTRPCRouter({
       }
       return guide;
     }),
+
+  update: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        description: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedGuide = await ctx.db.guide.update({
+        where: { id: input.id },
+        data: {
+          title: input.title,
+          description: input.description,
+        },
+      });
+      return updatedGuide;
+    }),
 });
