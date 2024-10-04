@@ -5,7 +5,14 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 
 const MyGuidesClient: FC = () => {
-  const { data: guides, isLoading, error } = api.guide.getAll.useQuery();
+  const {
+    data: guides,
+    isLoading,
+    error,
+  } = api.guide.getAll.useQuery(undefined, {
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
 
   if (isLoading) return <div>Loading guides...</div>;
   if (error) return <div>Error loading guides: {error.message}</div>;

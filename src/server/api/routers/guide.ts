@@ -71,4 +71,13 @@ export const guideRouter = createTRPCRouter({
       });
       return updatedGuide;
     }),
+
+  delete: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const deletedGuide = await ctx.db.guide.delete({
+        where: { id: input.id },
+      });
+      return deletedGuide;
+    }),
 });

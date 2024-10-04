@@ -25,9 +25,7 @@ export default function EditGuideForm({
 
   const updateGuide = api.guide.update.useMutation({
     onSuccess: () => {
-      // Invalidate the cache for this specific guide
       utils.guide.getById.invalidate({ id: guide.id });
-      // Invalidate the cache for the list of guides
       utils.guide.getAll.invalidate();
       onEditComplete();
     },
@@ -86,9 +84,9 @@ export default function EditGuideForm({
         <button
           type="submit"
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-          disabled={updateGuide.isLoading}
+          disabled={updateGuide.isPending}
         >
-          {updateGuide.isLoading ? "Updating..." : "Update Guide"}
+          {updateGuide.isPending ? "Updating..." : "Update Guide"}
         </button>
       </div>
     </form>
