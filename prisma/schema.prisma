@@ -28,6 +28,7 @@ model Guide {
   id          String   @id @default(cuid())
   title       String
   description String?
+  imageUrl    String?  // Make sure this is nullable (optional)
   createdBy   String
   steps       Step[]
   createdAt   DateTime @default(now())

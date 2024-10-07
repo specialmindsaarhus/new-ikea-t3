@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import Link from "next/link";
 import EditGuideForm from "~/components/EditGuideForm";
 import StepsManager from "~/components/StepsManager";
+import StepsShow from "~/components/StepsShow";
 
 export default function GuidePage() {
   const params = useParams();
@@ -60,11 +61,14 @@ export default function GuidePage() {
         ← Back to My Guides
       </Link>
       {isEditing ? (
-        <EditGuideForm
-          guide={guide}
-          onCancel={() => setIsEditing(false)}
-          onEditComplete={handleEditComplete}
-        />
+        <>
+          <EditGuideForm
+            guide={guide}
+            onCancel={() => setIsEditing(false)}
+            onEditComplete={handleEditComplete}
+          />
+          <StepsManager guideId={guide.id} />
+        </>
       ) : (
         <>
           <div className="mb-4 flex items-center justify-between">
@@ -91,7 +95,7 @@ export default function GuidePage() {
           <p className="mb-6 text-sm text-gray-500">
             Created at: {new Date(guide.createdAt).toLocaleDateString()}
           </p>
-          <StepsManager guideId={guide.id} />
+          <StepsShow guideId={guide.id} />
         </>
       )}
     </div>

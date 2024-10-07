@@ -83,15 +83,7 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
               }
               className="flex-grow rounded border p-2"
             />
-            <input
-              type="text"
-              value={step.imageUrl || ""}
-              onChange={(e) =>
-                handleUpdateStep(step, step.description, e.target.value)
-              }
-              placeholder="Image URL"
-              className="flex-grow rounded border p-2"
-            />
+
             <button
               onClick={() => handleDeleteStep(step.id)}
               className="rounded bg-red-500 px-2 py-1 text-white hover:bg-red-600"
@@ -109,6 +101,7 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
           placeholder="New step description"
           className="flex-grow rounded border p-2"
         />
+
         <input
           type="text"
           value={newStepImageUrl}
