@@ -57,6 +57,7 @@ export const guideRouter = createTRPCRouter({
         id: z.string(),
         title: z.string(),
         description: z.string().optional(),
+        imageUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -65,6 +66,7 @@ export const guideRouter = createTRPCRouter({
         data: {
           title: input.title,
           description: input.description,
+          imageUrl: input.imageUrl,
         },
       });
       return updatedGuide;
