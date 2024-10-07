@@ -7,7 +7,7 @@ interface Step {
   id: string;
   orderNumber: number;
   description: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
 }
 
 interface StepsManagerProps {
@@ -43,20 +43,25 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
       await addStep.mutateAsync({
         guideId,
         description: newStepDescription.trim(),
-        imageUrl: newStepImageUrl.trim() || undefined,
+        imageUrl: newStepImageUrl.trim() || null,
       });
     }
   };
 
   const handleUpdateStep = async (
     step: Step,
-    newDescription: string,
-    newImageUrl: string,
+    field: "description" | "imageUrl",
+    value: string,
   ) => {
+    const updatedStep = {
+      ...step,
+      [field]: value,
+    };
+
     await updateStep.mutateAsync({
       id: step.id,
-      description: newDescription,
-      imageUrl: newImageUrl || undefined,
+      description: updatedStep.description,
+      imageUrl: updatedStep.imageUrl || null,
     });
   };
 
@@ -75,15 +80,25 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
         {steps?.map((step) => (
           <li key={step.id} className="flex items-center space-x-2">
             <span className="font-bold">{step.orderNumber}.</span>
-            <input
-              type="text"
-              value={step.description}
-              onChange={(e) =>
-                handleUpdateStep(step, e.target.value, step.imageUrl || "")
-              }
-              className="flex-grow rounded border p-2"
-            />
-
+            <div className="flex-grow space-y-2">
+              <input
+                type="text"
+                value={step.description}
+                onChange={(e) =>
+                  handleUpdateStep(step, "description", e.target.value)
+                }
+                className="w-full rounded border p-2"
+              />
+              <input
+                type="text"
+                value={step.imageUrl || ""}
+                onChange={(e) =>
+                  handleUpdateStep(step, "imageUrl", e.target.value)
+                }
+                placeholder="Image URL"
+                className="w-full rounded border p-2"
+              />
+            </div>
             <button
               onClick={() => handleDeleteStep(step.id)}
               className="rounded bg-red-500 px-2 py-1 text-white hover:bg-red-600"
@@ -93,21 +108,20 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
           </li>
         ))}
       </ul>
-      <form onSubmit={handleAddStep} className="mt-4 flex space-x-2">
+      <form onSubmit={handleAddStep} className="mt-4 space-y-2">
         <input
           type="text"
           value={newStepDescription}
           onChange={(e) => setNewStepDescription(e.target.value)}
           placeholder="New step description"
-          className="flex-grow rounded border p-2"
+          className="w-full rounded border p-2"
         />
-
         <input
           type="text"
           value={newStepImageUrl}
           onChange={(e) => setNewStepImageUrl(e.target.value)}
           placeholder="Image URL"
-          className="flex-grow rounded border p-2"
+          className="w-full rounded border p-2"
         />
         <button
           type="submit"

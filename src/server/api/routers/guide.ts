@@ -93,7 +93,7 @@ export const guideRouter = createTRPCRouter({
       z.object({
         guideId: z.string(),
         description: z.string(),
-        //imageUrl: z.string().optional(),
+        imageUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -110,9 +110,9 @@ export const guideRouter = createTRPCRouter({
         orderNumber: newOrderNumber,
       };
 
-      /*if (input.imageUrl !== undefined) {
+      if (input.imageUrl !== undefined) {
         data.imageUrl = input.imageUrl;
-      }*/
+      }
 
       return ctx.db.step.create({ data });
     }),
@@ -122,7 +122,7 @@ export const guideRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         description: z.string(),
-        //imageUrl: z.string().optional(),
+        imageUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -130,9 +130,9 @@ export const guideRouter = createTRPCRouter({
         description: input.description,
       };
 
-      /*if (input.imageUrl !== undefined) {
+      if (input.imageUrl !== undefined) {
         data.imageUrl = input.imageUrl;
-      }*/
+      }
 
       return ctx.db.step.update({
         where: { id: input.id },
