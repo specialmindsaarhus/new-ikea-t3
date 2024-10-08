@@ -17,7 +17,12 @@ interface StepsManagerProps {
 
 export default function StepsManager({ guideId }: StepsManagerProps) {
   const [newStepDescription, setNewStepDescription] = useState("");
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editingStepDescription, setEditingStepDescription] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [generatingImageForStepId, setGeneratingImageForStepId] = useState<
+    string | null
+  >(null);
   const utils = api.useUtils();
 
   const { data: steps, isLoading } = api.guide.getSteps.useQuery({ guideId });
@@ -41,7 +46,6 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
     e.preventDefault();
     if (!newStepDescription.trim()) return;
 
-    setIsGeneratingImage(true);
     try {
       const result = await addStep.mutateAsync({
         guideId,
@@ -54,42 +58,18 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
     } catch (error) {
       console.error("Failed to add step:", error);
       // You might want to show an error message to the user here
-    } finally {
-      setIsGeneratingImage(false);
     }
   };
 
-  const handleUpdateStep = async (
-    step: Step,
-    field: "description" | "imageUrl",
-    value: string,
-  ) => {
-    const updatedStep = {
-      ...step,
-      [field]: value,
-    };
-
-    if (field === "description") {
-      setIsGeneratingImage(true);
-      try {
-        const { imageUrl, error } = await generateImage(value);
-        if (error) {
-          console.error("Failed to generate image:", error);
-          // You might want to show an error message to the user here
-        }
-        updatedStep.imageUrl = imageUrl || updatedStep.imageUrl;
-      } catch (error) {
-        console.error("Failed to generate image:", error);
-      } finally {
-        setIsGeneratingImage(false);
-      }
+  const handleUpdateStep = async (step: Step) => {
+    if (editingStepDescription !== step.description) {
+      await updateStep.mutateAsync({
+        id: step.id,
+        description: editingStepDescription,
+        imageUrl: step.imageUrl,
+      });
     }
-
-    await updateStep.mutateAsync({
-      id: step.id,
-      description: updatedStep.description,
-      imageUrl: updatedStep.imageUrl || null,
-    });
+    setEditingStepId(null);
   };
 
   const handleDeleteStep = async (stepId: string) => {
@@ -100,22 +80,29 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
 
   const handleRegenerateImage = async (step: Step) => {
     setIsGeneratingImage(true);
+    setGeneratingImageForStepId(step.id);
     try {
-      const { imageUrl, error } = await generateImage(step.description);
+      // Use the current description (which might be different from the one in the database)
+      const currentDescription =
+        editingStepId === step.id ? editingStepDescription : step.description;
+      const { imageUrl, error } = await generateImage(currentDescription);
       if (error) {
         console.error("Failed to regenerate image:", error);
         // You might want to show an error message to the user here
         return;
       }
+      // Update both the description and the image URL in the database
       await updateStep.mutateAsync({
         id: step.id,
-        description: step.description,
+        description: currentDescription,
         imageUrl: imageUrl || null,
       });
     } catch (error) {
       console.error("Failed to regenerate image:", error);
     } finally {
       setIsGeneratingImage(false);
+      setGeneratingImageForStepId(null);
+      setEditingStepId(null); // Exit editing mode after regenerating
     }
   };
 
@@ -129,14 +116,26 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
           <li key={step.id} className="flex items-center space-x-2">
             <span className="font-bold">{step.orderNumber}.</span>
             <div className="flex-grow space-y-2">
-              <input
-                type="text"
-                value={step.description}
-                onChange={(e) =>
-                  handleUpdateStep(step, "description", e.target.value)
-                }
-                className="w-full rounded border p-2"
-              />
+              {editingStepId === step.id ? (
+                <input
+                  type="text"
+                  value={editingStepDescription}
+                  onChange={(e) => setEditingStepDescription(e.target.value)}
+                  onBlur={() => handleUpdateStep(step)}
+                  className="w-full rounded border p-2"
+                  autoFocus
+                />
+              ) : (
+                <div
+                  onClick={() => {
+                    setEditingStepId(step.id);
+                    setEditingStepDescription(step.description);
+                  }}
+                  className="w-full cursor-pointer rounded border p-2"
+                >
+                  {step.description}
+                </div>
+              )}
               {step.imageUrl && (
                 <img
                   src={step.imageUrl}
@@ -149,7 +148,9 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
                 className="rounded bg-green-500 px-2 py-1 text-white hover:bg-green-600"
                 disabled={isGeneratingImage}
               >
-                {isGeneratingImage ? "Regenerating..." : "Regenerate Image"}
+                {isGeneratingImage && generatingImageForStepId === step.id
+                  ? "Regenerating..."
+                  : "Regenerate Image"}
               </button>
             </div>
             <button
@@ -172,13 +173,9 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
         <button
           type="submit"
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-          disabled={isGeneratingImage || addStep.isLoading}
+          disabled={addStep.isLoading}
         >
-          {isGeneratingImage
-            ? "Generating Image..."
-            : addStep.isLoading
-              ? "Adding Step..."
-              : "Add Step"}
+          {addStep.isLoading ? "Adding Step..." : "Add Step"}
         </button>
       </form>
     </div>
