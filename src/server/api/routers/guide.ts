@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { generateImage } from "~/app/actions/generateImage";
 
 export const guideRouter = createTRPCRouter({
   hello: publicProcedure
@@ -90,6 +91,7 @@ export const guideRouter = createTRPCRouter({
         orderBy: { orderNumber: "asc" },
       });
     }),
+
   addStep: publicProcedure
     .input(
       z.object({
@@ -106,17 +108,38 @@ export const guideRouter = createTRPCRouter({
 
       const newOrderNumber = lastStep ? lastStep.orderNumber + 1 : 1;
 
+      let imageUrl = input.imageUrl;
+
+      // If no imageUrl is provided, generate one
+      if (!imageUrl) {
+        console.log(
+          "Calling generateImage with description:",
+          input.description,
+        );
+        const result = await generateImage(input.description);
+        console.log("generateImage result:", result);
+        if ("imageUrl" in result) {
+          imageUrl = result.imageUrl;
+        } else {
+          console.error("Image generation failed:", result.error);
+        }
+      }
+
       const data: any = {
         guideId: input.guideId,
         description: input.description,
         orderNumber: newOrderNumber,
       };
 
-      if (input.imageUrl !== undefined) {
-        data.imageUrl = input.imageUrl;
+      if (imageUrl) {
+        data.imageUrl = imageUrl;
       }
 
-      return ctx.db.step.create({ data });
+      console.log("Creating step with data:", data);
+      const createdStep = await ctx.db.step.create({ data });
+      console.log("Step created:", createdStep);
+
+      return createdStep;
     }),
 
   updateStep: publicProcedure
@@ -124,7 +147,7 @@ export const guideRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         description: z.string(),
-        imageUrl: z.string().optional(),
+        imageUrl: z.string().nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -134,6 +157,12 @@ export const guideRouter = createTRPCRouter({
 
       if (input.imageUrl !== undefined) {
         data.imageUrl = input.imageUrl;
+      } else {
+        // If imageUrl is not provided, generate a new one
+        const result = await generateImage(input.description);
+        if (result.imageUrl) {
+          data.imageUrl = result.imageUrl;
+        }
       }
 
       return ctx.db.step.update({
@@ -141,6 +170,7 @@ export const guideRouter = createTRPCRouter({
         data,
       });
     }),
+
   // Delete a step
   deleteStep: publicProcedure
     .input(z.object({ id: z.string() }))

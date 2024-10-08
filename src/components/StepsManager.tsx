@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { generateImage } from "~/app/actions/generateImage";
 
 interface Step {
   id: string;
@@ -16,7 +17,7 @@ interface StepsManagerProps {
 
 export default function StepsManager({ guideId }: StepsManagerProps) {
   const [newStepDescription, setNewStepDescription] = useState("");
-  const [newStepImageUrl, setNewStepImageUrl] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const utils = api.useUtils();
 
   const { data: steps, isLoading } = api.guide.getSteps.useQuery({ guideId });
@@ -25,7 +26,6 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
     onSuccess: () => {
       utils.guide.getSteps.invalidate({ guideId });
       setNewStepDescription("");
-      setNewStepImageUrl("");
     },
   });
 
@@ -39,12 +39,23 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
 
   const handleAddStep = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newStepDescription.trim()) {
-      await addStep.mutateAsync({
+    if (!newStepDescription.trim()) return;
+
+    setIsGeneratingImage(true);
+    try {
+      const result = await addStep.mutateAsync({
         guideId,
-        description: newStepDescription.trim(),
-        imageUrl: newStepImageUrl.trim() || null,
+        description: newStepDescription,
       });
+      console.log("Step added:", result);
+      if (!result.imageUrl) {
+        console.warn("Step added without an image");
+      }
+    } catch (error) {
+      console.error("Failed to add step:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -58,6 +69,22 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
       [field]: value,
     };
 
+    if (field === "description") {
+      setIsGeneratingImage(true);
+      try {
+        const { imageUrl, error } = await generateImage(value);
+        if (error) {
+          console.error("Failed to generate image:", error);
+          // You might want to show an error message to the user here
+        }
+        updatedStep.imageUrl = imageUrl || updatedStep.imageUrl;
+      } catch (error) {
+        console.error("Failed to generate image:", error);
+      } finally {
+        setIsGeneratingImage(false);
+      }
+    }
+
     await updateStep.mutateAsync({
       id: step.id,
       description: updatedStep.description,
@@ -68,6 +95,27 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
   const handleDeleteStep = async (stepId: string) => {
     if (window.confirm("Are you sure you want to delete this step?")) {
       await deleteStep.mutateAsync({ id: stepId });
+    }
+  };
+
+  const handleRegenerateImage = async (step: Step) => {
+    setIsGeneratingImage(true);
+    try {
+      const { imageUrl, error } = await generateImage(step.description);
+      if (error) {
+        console.error("Failed to regenerate image:", error);
+        // You might want to show an error message to the user here
+        return;
+      }
+      await updateStep.mutateAsync({
+        id: step.id,
+        description: step.description,
+        imageUrl: imageUrl || null,
+      });
+    } catch (error) {
+      console.error("Failed to regenerate image:", error);
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -89,15 +137,20 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
                 }
                 className="w-full rounded border p-2"
               />
-              <input
-                type="text"
-                value={step.imageUrl || ""}
-                onChange={(e) =>
-                  handleUpdateStep(step, "imageUrl", e.target.value)
-                }
-                placeholder="Image URL"
-                className="w-full rounded border p-2"
-              />
+              {step.imageUrl && (
+                <img
+                  src={step.imageUrl}
+                  alt={step.description}
+                  className="max-w-xs"
+                />
+              )}
+              <button
+                onClick={() => handleRegenerateImage(step)}
+                className="rounded bg-green-500 px-2 py-1 text-white hover:bg-green-600"
+                disabled={isGeneratingImage}
+              >
+                {isGeneratingImage ? "Regenerating..." : "Regenerate Image"}
+              </button>
             </div>
             <button
               onClick={() => handleDeleteStep(step.id)}
@@ -116,18 +169,16 @@ export default function StepsManager({ guideId }: StepsManagerProps) {
           placeholder="New step description"
           className="w-full rounded border p-2"
         />
-        <input
-          type="text"
-          value={newStepImageUrl}
-          onChange={(e) => setNewStepImageUrl(e.target.value)}
-          placeholder="Image URL"
-          className="w-full rounded border p-2"
-        />
         <button
           type="submit"
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          disabled={isGeneratingImage || addStep.isLoading}
         >
-          Add Step
+          {isGeneratingImage
+            ? "Generating Image..."
+            : addStep.isLoading
+              ? "Adding Step..."
+              : "Add Step"}
         </button>
       </form>
     </div>
